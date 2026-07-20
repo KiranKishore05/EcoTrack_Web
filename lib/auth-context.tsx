@@ -11,7 +11,11 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, displayName: string) => Promise<{ error: string | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string
+  ) => Promise<{ error: string | null; requiresEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -24,6 +28,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const upsertProfile = useCallback(
+    async (
+      uid: string,
+      updates: Partial<Pick<Profile, 'display_name' | 'location' | 'bio' | 'avatar_url'>> = {}
+    ) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: uid,
+            ...updates,
+          },
+          { onConflict: 'id' }
+        )
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Profile upsert error:', error.message);
+        return null;
+      }
+
+      const nextProfile = data as Profile;
+      setProfile(nextProfile);
+      return nextProfile;
+    },
+    []
+  );
+
   const loadProfile = useCallback(async (uid: string) => {
     const { data, error } = await supabase
       .from('profiles')
@@ -35,18 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (!data) {
-      // Auto-create profile on first login
-      const { data: created, error: createErr } = await supabase
-        .from('profiles')
-        .insert({ id: uid })
-        .select('*')
-        .maybeSingle();
-      if (created) setProfile(created as Profile);
-      else if (createErr) console.error('Profile create error:', createErr.message);
+      await upsertProfile(uid);
     } else {
       setProfile(data as Profile);
     }
-  }, []);
+  }, [upsertProfile]);
 
   const refreshProfile = useCallback(async () => {
     if (user) await loadProfile(user.id);
@@ -96,16 +122,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       options: { data: { display_name: displayName } },
     });
-    if (error) return { error: error.message };
-    // Create profile row immediately if user returned
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        display_name: displayName,
-      });
+    if (error) {
+      return { error: error.message, requiresEmailConfirmation: false };
     }
-    return { error: null };
-  }, []);
+
+    if (data.session?.user) {
+      await upsertProfile(data.session.user.id, { display_name: displayName });
+    }
+
+    return {
+      error: null,
+      requiresEmailConfirmation: !data.session,
+    };
+  }, [upsertProfile]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();

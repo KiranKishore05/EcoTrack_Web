@@ -52,16 +52,20 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from('profiles').update({
-      display_name: displayName,
-      location,
-      bio,
-    }).eq('id', user.id);
+    const { error } = await supabase.from('profiles').upsert(
+      {
+        id: user.id,
+        display_name: displayName.trim() || null,
+        location: location.trim() || null,
+        bio: bio.trim() || null,
+      },
+      { onConflict: 'id' }
+    );
     if (error) {
-      toast.error('Failed to save profile');
+      toast.error(`Failed to save profile: ${error.message}`);
     } else {
       toast.success('Profile updated');
-      refreshProfile();
+      await refreshProfile();
     }
     setSaving(false);
   };

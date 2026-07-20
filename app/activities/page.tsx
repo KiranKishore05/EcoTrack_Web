@@ -330,12 +330,16 @@ async function updateStreakAndXp(
   const longest = Math.max(newStreak, profile?.longest_streak ?? 0);
   const newXp = (profile?.total_xp ?? 0) + 15;
 
-  await supabase.from('profiles').update({
-    current_streak: newStreak,
-    longest_streak: longest,
-    last_activity_date: dateStr,
-    total_xp: newXp,
-  }).eq('id', userId);
+  await supabase.from('profiles').upsert(
+    {
+      id: userId,
+      current_streak: newStreak,
+      longest_streak: longest,
+      last_activity_date: dateStr,
+      total_xp: newXp,
+    },
+    { onConflict: 'id' }
+  );
 
   await refresh();
 }

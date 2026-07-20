@@ -17,20 +17,24 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
     setLoading(true);
-    const { error: err } = await signUp(email, password, name);
+    const { error: err, requiresEmailConfirmation } = await signUp(email, password, name.trim());
     setLoading(false);
     if (err) {
       setError(err);
+    } else if (requiresEmailConfirmation) {
+      setSuccess('Check your email to confirm your account, then sign in.');
     } else {
       router.push('/dashboard');
     }
@@ -65,6 +69,12 @@ export default function SignupPage() {
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-destructive/10 text-destructive text-sm mb-4">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="px-3 py-2.5 rounded-lg bg-primary/10 text-primary text-sm mb-4">
+              <span>{success}</span>
             </div>
           )}
 

@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     title: 'EcoTrack — AI-Powered Sustainability Platform',
     description:
       'Track daily habits, calculate your carbon footprint, receive AI-generated eco suggestions, and monitor your sustainability goals.',
+    images: [{ url: '/ecotrack-logo.png' }],
   },
 };
 
