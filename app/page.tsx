@@ -7,6 +7,11 @@ import {
   ArrowRight, Sparkles, Zap, Globe, Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Footer from '@/components/Footer';
+import { useAuth } from '@/lib/auth-context';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 const FEATURES = [
   {
@@ -49,8 +54,30 @@ const STATS = [
 ];
 
 export default function LandingPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  // Show spinner while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If logged in, don't flash the landing page while redirecting
+  if (user) return null;
+
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 bg-grid opacity-40" />
       <div className="absolute inset-0 bg-radial-fade" />
@@ -196,21 +223,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-border/50">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Leaf className="w-4 h-4 text-primary" />
-            <span className="font-semibold">EcoTrack</span>
-            <span className="text-sm text-muted-foreground ml-2">© 2026 EcoTrack</span>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> Secure</span>
-            <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> Carbon Neutral</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 }

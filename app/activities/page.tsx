@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   ACTIVITY_META, buildActivityInput, calculateEmission,
 } from '@/lib/carbon-engine';
+import { awardActivityXP } from '@/lib/gamification';
 import type { Activity, ActivityType, Category } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,13 +99,15 @@ export default function ActivitiesPage() {
       return;
     }
 
-    // Update streak + XP
-    await updateStreakAndXp(user.id, profile, date, refreshProfile);
+    // Update streak + XP via Gamification Engine
+    const earnedXp = await awardActivityXP(user.id, profile, date, selectedType, meta.category);
 
     toast.success(`Activity logged — ${input.co2_kg} kg CO₂`);
+    toast.success(`+${earnedXp} XP earned!`);
     setValue('');
     setNotes('');
     setSubmitting(false);
+    refreshProfile();
     load();
   };
 
@@ -312,34 +315,3 @@ export default function ActivitiesPage() {
   );
 }
 
-async function updateStreakAndXp(
-  userId: string,
-  profile: { current_streak: number; longest_streak: number; last_activity_date: string | null; total_xp: number } | null,
-  dateStr: string,
-  refresh: () => Promise<void>
-) {
-  const today = new Date(dateStr);
-  const last = profile?.last_activity_date ? new Date(profile.last_activity_date) : null;
-  let newStreak = 1;
-  if (last) {
-    const diff = Math.round((today.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff === 1) newStreak = (profile?.current_streak ?? 0) + 1;
-    else if (diff === 0) newStreak = profile?.current_streak ?? 1;
-    else newStreak = 1;
-  }
-  const longest = Math.max(newStreak, profile?.longest_streak ?? 0);
-  const newXp = (profile?.total_xp ?? 0) + 15;
-
-  await supabase.from('profiles').upsert(
-    {
-      id: userId,
-      current_streak: newStreak,
-      longest_streak: longest,
-      last_activity_date: dateStr,
-      total_xp: newXp,
-    },
-    { onConflict: 'id' }
-  );
-
-  await refresh();
-}

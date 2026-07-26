@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileBarChart, Calendar, Download, Loader2, Bell, Target,
@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
-import { generateWeeklyReport } from '@/lib/ai-engine';
 import { computeCategoryBreakdown, computeSustainabilityIndex } from '@/lib/carbon-engine';
 import type { Activity, Goal, Report, ReportPeriod } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -17,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function ReportsPage() {
   const { user, profile } = useAuth();
@@ -64,13 +65,33 @@ export default function ReportsPage() {
 
     const budget = 300;
     const sustainabilityIndex = profile?.sustainability_index ?? computeSustainabilityIndex(activities, budget);
-    const report = generateWeeklyReport({
-      activities: periodActivities,
-      goals,
-      budget,
-      sustainabilityIndex,
-      streak: profile?.current_streak ?? 0,
-    });
+    
+    let report: any;
+    try {
+      const res = await fetch('/api/ai/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activities: periodActivities,
+          goals,
+          budget,
+          sustainabilityIndex,
+          streak: profile?.current_streak ?? 0,
+          period,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to fetch AI report');
+      report = await res.json();
+    } catch (error) {
+      console.error(error);
+      toast.error('AI Report generation failed, falling back to simple report.');
+      // Simple fallback if API fails
+      report = {
+        summary: `You generated a ${period} report. Logged ${periodActivities.length} activities.`,
+        recommendations: [],
+        weekly_goals: []
+      };
+    }
 
     const totalCo2 = periodActivities.reduce((s, a) => s + a.co2_kg, 0);
     const { error } = await supabase.from('reports').insert({
@@ -91,6 +112,27 @@ export default function ReportsPage() {
       load();
     }
     setGenerating(false);
+  };
+
+  const handleExportPDF = async (reportId: string) => {
+    const element = document.getElementById(`report-${reportId}`);
+    if (!element) return;
+    
+    toast.success('Generating PDF...');
+    try {
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#0f172a' }); // Using dark background for dark mode by default
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`EcoTrack_Report_${reportId}.pdf`);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to generate PDF');
+    }
   };
 
   // Build notifications from current state
@@ -223,7 +265,7 @@ export default function ReportsPage() {
                   exit={{ opacity: 0 }}
                   transition={{ delay: i * 0.04 }}
                 >
-                  <Card className="glass rounded-2xl p-5">
+                  <Card id={`report-${r.id}`} className="glass rounded-2xl p-5">
                     <div className="flex items-start justify-between gap-4 mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -247,6 +289,15 @@ export default function ReportsPage() {
                           <div className="text-xs text-muted-foreground">Total CO₂</div>
                           <div className="text-lg font-bold text-gradient">{r.total_co2_kg} kg</div>
                         </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-xl h-10 w-10 text-muted-foreground hover:text-primary"
+                          onClick={() => handleExportPDF(r.id)}
+                          title="Export to PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">{r.summary}</p>

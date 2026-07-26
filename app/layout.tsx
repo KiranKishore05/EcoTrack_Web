@@ -10,19 +10,41 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'EcoTrack | AI Sustainability Platform',
   description:
-    'Track daily habits, calculate your carbon footprint, receive AI-generated eco suggestions, and monitor your sustainability goals.',
+    'AI-powered sustainability platform for tracking carbon footprint, sustainability goals, and environmental impact.',
+  keywords: [
+    'EcoTrack',
+    'Carbon Footprint',
+    'Sustainability',
+    'Next.js',
+    'AI',
+    'Supabase',
+  ],
+  authors: [
+    {
+      name: 'Kiran Kishore',
+    },
+  ],
   openGraph: {
-    title: 'EcoTrack — AI-Powered Sustainability Platform',
-    description:
-      'Track daily habits, calculate your carbon footprint, receive AI-generated eco suggestions, and monitor your sustainability goals.',
-    images: [{ url: '/ecotrack-logo.png' }],
+    title: 'EcoTrack',
+    description: 'AI-powered sustainability management platform.',
+    url: 'https://ecotrack-system.netlify.app',
+    siteName: 'EcoTrack',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} flex flex-col min-h-screen`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -30,7 +52,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
             <Toaster position="bottom-right" />
           </AuthProvider>
         </ThemeProvider>

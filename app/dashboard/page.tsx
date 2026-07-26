@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { xpToNextLevel } from '@/lib/carbon-engine';
+import { ActivityCalendar } from 'react-activity-calendar';
 
 const CATEGORY_COLORS: Record<string, string> = {
   transport: 'hsl(var(--chart-1))',
@@ -347,6 +348,41 @@ export default function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           )}
+        </Card>
+      </motion.div>
+
+      {/* Streak Heatmap */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.5 }}
+      >
+        <Card className="glass rounded-2xl p-5 overflow-hidden">
+          <h3 className="font-semibold mb-1">Activity Heatmap</h3>
+          <p className="text-xs text-muted-foreground mb-4">Your daily logging streak (GitHub style)</p>
+          
+          <div className="w-full overflow-x-auto pb-2 flex justify-center custom-scrollbar">
+            {stats.heatmapData && stats.heatmapData.length > 0 ? (
+              <ActivityCalendar
+                data={stats.heatmapData}
+                theme={{
+                  light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+                  dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                }}
+                colorScheme="dark"
+                labels={{
+                  totalCount: '{{count}} activities in the last year',
+                }}
+                blockSize={12}
+                blockRadius={4}
+                blockMargin={4}
+              />
+            ) : (
+              <div className="h-[120px] flex items-center justify-center text-sm text-muted-foreground w-full">
+                Log activities to see your heatmap
+              </div>
+            )}
+          </div>
         </Card>
       </motion.div>
     </div>

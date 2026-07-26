@@ -132,3 +132,10 @@ export function xpToNextLevel(xp: number): { current: number; needed: number; pe
   const current = xp - base;
   return { current, needed, percent: Math.min(100, Math.round((current / needed) * 100)) };
 }
+
+export function getLevelTitle(level: number): string {
+  if (level < 5) return 'Eco Beginner';
+  if (level < 10) return 'Eco Explorer';
+  if (level < 20) return 'Eco Champion';
+  return 'Planet Protector';
+}

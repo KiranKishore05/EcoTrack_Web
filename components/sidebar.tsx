@@ -12,13 +12,17 @@ import {
   FileBarChart,
   Settings,
   Leaf,
+  Bot,
+  Scan,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/activities', label: 'Activities', icon: PlusCircle },
+  { href: '/dashboard/scanner', label: 'Scanner', icon: Scan },
   { href: '/budget', label: 'Carbon Budget', icon: Target },
+  { href: '/dashboard/coach', label: 'AI Coach', icon: Bot },
   { href: '/recommendations', label: 'AI Insights', icon: Brain },
   { href: '/achievements', label: 'Achievements', icon: Trophy },
   { href: '/reports', label: 'Reports', icon: FileBarChart },

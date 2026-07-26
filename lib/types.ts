@@ -143,4 +143,5 @@ export interface DashboardStats {
   streak: number;
   level: number;
   totalXp: number;
+  heatmapData: Array<{ date: string; count: number; level: number }>;
 }
