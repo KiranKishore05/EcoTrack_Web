@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (
       uid: string,
       updates: Partial<
-        Pick<Profile, 'display_name' | 'location' | 'bio' | 'avatar_url'>
+        Pick<Profile, 'display_name' | 'location' | 'bio' | 'avatar_url' | 'email'>
       > = {}
     ) => {
       const { data, error } = await supabase
@@ -167,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.session?.user) {
         await upsertProfile(data.session.user.id, {
           display_name: displayName,
+          email,
         });
       }
 

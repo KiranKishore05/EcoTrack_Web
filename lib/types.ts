@@ -21,9 +21,12 @@ export interface Activity {
 export interface Profile {
   id: string;
   display_name: string | null;
+  email: string | null;
   avatar_url: string | null;
   location: string | null;
   bio: string | null;
+  role: 'user' | 'moderator' | 'admin';
+  is_suspended: boolean;
   sustainability_index: number;
   total_xp: number;
   level: number;
@@ -85,11 +88,13 @@ export interface Achievement {
 }
 
 export type ReportPeriod = 'daily' | 'weekly' | 'monthly';
+export type ReportStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Report {
   id: string;
   user_id: string;
   period: ReportPeriod;
+  status: ReportStatus;
   start_date: string;
   end_date: string;
   summary: string;
@@ -145,4 +150,18 @@ export interface DashboardStats {
   level: number;
   totalXp: number;
   heatmapData: Array<{ date: string; count: number; level: number }>;
+}
+
+export interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  target_co2_kg: number;
+  reward_xp: number;
+  start_date: string | null;
+  end_date: string | null;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 }
